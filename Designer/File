@@ -1,0 +1,33 @@
+____															
+															
+XingWei 		__													
+		__	SubCityCode	SubCityName	PersonNum	Attendance	AttendanceQualified	FiledLength	AvgOrders						
+			____	____	_____	___	_____	____	_____						
+															
+															
+___________________															
+JieDanShu 		__	subCityCode	____											
+															
+		__	SubCityCode	Month	JieDanShu										
+			____	__	_____										
+															
+___________________															
+PingJunShiChang 		__	subCityCode	____											
+															
+		__	SubCityCode	Month	ZhuChangShiJian										
+			____	__	_____										
+															
+															
+__________________															
+QianDaoHeGeLv 		__	subCityCode												
+		__	SubCityCode	Month	HeGeLv										
+			____	__	___										
+															
+______															
+ZaiShi															
+			SubCityCode	SubCityName	ZaiShiShu	ZhongQi	BaoJing	FaKuan							
+			____	____	_____	_______	______	______							
+____															
+XingWeiDiTu		__	subCityCode												
+		__	PactNumber	MonitorName 	Time	OrderLng	OrderLat	SiLng	SiLat	SoLng	SoLat	SiDate	SoDate	OrderState	Distance
+			___	_____	____	____	____	____	____	____	____	____	____	____	__

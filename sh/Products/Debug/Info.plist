@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>path</key>
+	<string>/Users/lifeng/Documents/192.168.1.113/code/实创/SCAnalysis/</string>
+	<key>plist_path</key>
+	<string>/Users/lifeng/Documents/192.168.1.113/code/实创/SCAnalysis/Designer/SC_Analysis-Info.plist</string>
+	<key>ipa_url_path</key>
+	<string>http://223.4.147.79:8080/ipa/sc/analysis/</string>
+</dict>
+</plist>
