@@ -760,6 +760,7 @@
 - (void)viewLoadGongDi:(NSString *)pactNumber
 {
     UIImageView *imgView =  [[ImageView share] addToView:_mapButtonView imagePathName:@"形状-1-副本-32" rect:RectMake2x(407, 393, 734, 475)];
+    imgView.userInteractionEnabled = YES;
     
     NSDictionary *dict = [self dictForDataArray:pactNumber];
     NSLog(@"%@", dict);
@@ -774,6 +775,8 @@
         label.tag = i +10;
         [imgView addSubview:label];
     }
+
+    
     
     
     UILabel *l = (UILabel *)[imgView viewWithTag:11];
@@ -781,7 +784,7 @@
     UILabel *l2 = (UILabel *)[imgView viewWithTag:13];
     UILabel *l3 = (UILabel *)[imgView viewWithTag:14];
     UILabel *l4 = (UILabel *)[imgView viewWithTag:15];
-    UILabel *l5 = (UILabel *)[imgView viewWithTag:16];
+//    UILabel *l5 = (UILabel *)[imgView viewWithTag:16];
     
     
     NSLog(@"%@",  dict[@"OrderState"][@"text"]);
@@ -826,14 +829,207 @@
     }
     l4.text = payString;
     
+
+    
 //延期单列表
+    UIScrollView *sv = [[UIScrollView alloc] initWithFrame:RectMake2x(0, 4 * 50, 734, 350)];
+    sv.backgroundColor = [UIColor whiteColor];
     
     
-//    NSString *yanqi = [NSString stringWithFormat:@""];
-//    l5.text = [NSString stringWithFormat:@"延期：%.2f 米", dict[@"Distance"][@"text"]];
+    [imgView addSubview:sv];
     
     
-//    报警
+    int count = 0;
+    
+    if ( dict[@"Delays"]  ) {
+        
+        NSMutableArray *a = dict[@"Delays"][@"Delay"];
+        
+        if ( [a isKindOfClass:[NSMutableDictionary class]] ) {
+            
+            a = [[NSMutableArray alloc] initWithObjects:a, nil];
+            
+        }
+        
+        
+        currentDelayArray = a;
+        
+        int i = 4;
+        int tag = 1000;
+        for (NSDictionary *d in a) {
+            
+            
+            UITextView *tv = [[UITextView alloc] initWithFrame:RectMake2x(0, i * 50, 734, 150)];
+            [imgView addSubview:tv];
+            tv.editable = NO;
+            tv.textAlignment = NSTextAlignmentCenter;
+            tv.backgroundColor = [UIColor clearColor];
+            tv.text = d[@"reason"][@"text"];
+            
+            NSString *ImgCount = d[@"ImgCount"][@"text"];
+            if ( ! [ImgCount isEqualToString:@"0"]) {
+                UIButton *button = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+                [button setTitleColor:[UIColor blueColor] forState:UIControlStateNormal];
+                button.frame = RectMake2x(560, i * 50, 154, 60);
+                button.backgroundColor = [UIColor whiteColor];
+                button.tag = tag;
+                [button setTitle:@"延期照片" forState:UIControlStateNormal];
+                [button addTarget:self action:@selector(openDelayZhaoPian:) forControlEvents:UIControlEventTouchUpInside];
+                [imgView addSubview:button];
+            }
+            
+            i++;
+            tag ++;
+            
+            count ++;
+        }
+        
+        
+        
+    }
+    
+//事务单列表
+
+    if ( dict[@"Transactions"]  ) {
+        NSMutableArray *a = dict[@"Delays"][@"Delay"];
+        if ( [a isKindOfClass:[NSMutableDictionary class]] ) {
+            
+            a = [[NSMutableArray alloc] initWithObjects:a, nil];
+        }
+        
+        
+        currentTransactionsArray = a;
+        
+        int i = 4;
+        int tag = 1000;
+        for (NSDictionary *d in a) {
+            
+            
+            UITextView *tv = [[UITextView alloc] initWithFrame:RectMake2x(0, i * 50, 734, 150)];
+            [imgView addSubview:tv];
+            tv.editable = NO;
+            tv.textAlignment = NSTextAlignmentCenter;
+            tv.backgroundColor = [UIColor clearColor];
+            tv.text = d[@"reason"][@"text"];
+            
+            NSString *ImgCount = d[@"ImgCount"][@"text"];
+            if ( ! [ImgCount isEqualToString:@"0"]) {
+                UIButton *button = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+                [button setTitleColor:[UIColor blueColor] forState:UIControlStateNormal];
+                button.frame = RectMake2x(560, i * 50, 154, 60);
+                button.backgroundColor = [UIColor whiteColor];
+                button.tag = tag;
+                [button setTitle:@"延期照片" forState:UIControlStateNormal];
+                [button addTarget:self action:@selector(openTransactionsZhaoPian:) forControlEvents:UIControlEventTouchUpInside];
+                [imgView addSubview:button];
+            }
+            
+            i++;
+            tag ++;
+            count ++;
+        }
+        
+        
+        
+    }
+    
+    [sv setContentSize:CGSizeMake(734, count * 50)];
+}
+
+
+
+- (void)loadData:(int)type
+{
+    
+ 
+    [SVProgressHUD showWithStatus:@"正在刷新数据..." maskType:SVProgressHUDMaskTypeGradient];
+    
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    manager.responseSerializer = [AFXMLParserResponseSerializer new];
+    manager.responseSerializer.acceptableContentTypes = [NSSet setWithObject:@"text/xml"];
+    
+    
+    
+    NSMutableString *urlStr = [NSMutableString stringWithFormat:@"%@/", KHomeUrl];
+    
+    
+    if (type == 1) {
+        [urlStr appendString:@"XingWeiDiTu"];
+    }
+    else {
+        [urlStr appendString:@"GongDiDiTu"];
+    }
+    
+    NSDictionary *parameters = @{ @"subCityCode":  self.city_code};
+    
+    
+    
+    [manager POST:urlStr parameters:parameters success:^(AFHTTPRequestOperation *operation, id responseObject) {
+        
+        
+        NSError *parseError = nil;
+        NSDictionary *xmlDictionary= [XMLReader dictionaryForParse:responseObject error:&parseError];
+        NSString *s = [xmlDictionary[@"string"] objectForKey:@"text"];
+        NSDictionary *dict = [XMLReader dictionaryForXMLString:s error:&parseError];
+        
+        
+        if (type == 1) {
+            dict = dict[@"ArrayOfXingWeiDiTu"][@"XingWeiDiTu"];
+        }
+        else {
+            dict = dict[@"ArrayOfGongDiDiTu"][@"GongDiDiTu"];
+        }
+        
+        if (dict == nil) {
+            [SVProgressHUD dismiss];
+            
+            self.dataMArray = [[NSMutableArray alloc] init];
+            
+            return ;
+        }
+        else {
+            [SVProgressHUD dismiss];
+            if ([dict isKindOfClass:[NSMutableDictionary class]]) {
+                [self.dataMArray addObject:  dict];
+            }
+            else {
+                self.dataMArray =  dict;
+            }
+        }
+        
+        
+    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+        [SVProgressHUD dismiss];
+        [[Message share] messageAlert:KString_Server_Error];
+        DLog(@"%s: AFHTTPRequestOperation error: %@", __FUNCTION__, error);
+    }];
+}
+
+
+
+//
+//2	延期单
+//3	事务单
+
+- (void)openDelayZhaoPian:(UIButton *)button
+{
+    
+    int tag = button.tag - 1000;
+    
+    NSDictionary *d = currentDelayArray [tag];
+    
+    
+
+}
+
+
+- (void)openTransactionsZhaoPian:(UIButton *)button
+{
+    
+    int tag = button.tag - 1000;
+    
+    NSDictionary *d = currentTransactionsArray[tag];
+    
     
     
 }

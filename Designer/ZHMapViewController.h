@@ -33,6 +33,8 @@ typedef  NSInteger MapTagType;
     UIButton *currentButton;
     int currentMapType;
     
+    NSArray *currentDelayArray;
+    NSArray *currentTransactionsArray;
     
     NSMutableArray *userArray;
     
