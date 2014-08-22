@@ -142,8 +142,17 @@ typedef enum {
 
 //http://124.202.145.74:8815/Tositrust.asmx
 
+
 #ifdef DEBUG
-#define KHomeUrl @"http://oa.sitrust.cn:8001/Report.asmx"
+#define KSXCHomeUrl @"http://124.202.145.74:8815/Tositrust.asmx"
+#else
+#define KSXCHomeUrl @"http://oa.sitrust.cn:8001/Tositrust.asmx"
+#endif
+
+
+
+#ifdef DEBUG
+#define KHomeUrl @"http://124.202.145.74:8815/Report.asmx"
 #else
 #define KHomeUrl @"http://oa.sitrust.cn:8001/Report.asmx"
 #endif
