@@ -38,6 +38,11 @@ typedef  NSInteger MapTagType;
     
     NSMutableArray *userArray;
     
+    
+    NSDictionary *currentGDDict ;
+    
+    UIScrollView *imagesScrollView;
+    
 }
 
 @property (nonatomic, strong) UIPopoverController *popover;

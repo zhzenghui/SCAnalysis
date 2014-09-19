@@ -371,11 +371,7 @@
     dispatch_queue_t queue = dispatch_queue_create("com.ple.queue", NULL);
     dispatch_async(queue, ^(void) {
         
-        
-        
 
-
- 
         
             
             if ( [[NetWork shareNetWork] CheckNetwork]) {

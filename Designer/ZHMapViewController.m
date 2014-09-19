@@ -14,6 +14,10 @@
 
 #import "PdfPopoverController.h"
 #import "DateTimePopoverController.h"
+#import "UIImageView+WebCache.h"
+
+
+
 
 @interface ZHMapViewController ()
 {
@@ -271,7 +275,46 @@
     }];
 }
 
+- (void)getCityCenter
+{
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    manager.responseSerializer = [AFXMLParserResponseSerializer new];
+    manager.responseSerializer.acceptableContentTypes = [NSSet setWithObject:@"text/xml"];
+    
+    
+    
+    NSMutableString *urlStr = [NSMutableString stringWithFormat:@"%@/GetCityCenter", KHomeUrl];
+    
 
+    NSDictionary *parameters = @{ @"subCityCode":  self.city_code };
+    
+    
+    
+    [manager POST:urlStr parameters:parameters success:^(AFHTTPRequestOperation *operation, id responseObject) {
+        
+        
+        NSError *parseError = nil;
+        NSDictionary *xmlDictionary= [XMLReader dictionaryForParse:responseObject error:&parseError];
+        NSString *s = [xmlDictionary[@"string"] objectForKey:@"text"];
+        NSDictionary *dict = [XMLReader dictionaryForXMLString:s options:XMLReaderOptionsProcessNamespaces error:&parseError];
+        
+//        [Cookie setCookie:@"lat" value:dict[@"Lat"][@"text"]];
+//        [Cookie setCookie:@"lng" value:dict[@"Lng"][@"text"]];
+
+        
+        double lat = [dict[@"Loaction"][@"Lat"][@"text"] doubleValue];
+        double lng = [dict[@"Loaction"][@"Lng"][@"text"] doubleValue];
+        
+        CLLocationCoordinate2D locat = CLLocationCoordinate2DMake( lat, lng );
+        [_baidu_MapView setCenterCoordinate:locat animated:YES];
+        
+    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+        [SVProgressHUD dismiss];
+        [[Message share] messageAlert:KString_Server_Error];
+        DLog(@"%s: AFHTTPRequestOperation error: %@", __FUNCTION__, error);
+    }];
+
+}
 
 
 
@@ -323,11 +366,17 @@
     
     
     [self loadUserList];
+    
 }
 
 - (void)viewDidAppear:(BOOL)animated
 {
     [super viewDidAppear:YES];
+    
+    
+    [self getCityCenter];
+
+    
     
     [self loadConstructionsData:currentMapType name:@"" date:@""];
 
@@ -413,7 +462,7 @@
         
         
         
-        
+//        _baidu_MapView setCenterCoordinate:<#(CLLocationCoordinate2D)#> animated:<#(BOOL)#>
         
         [_baidu_MapView addAnnotation:pointAnnotation];
         
@@ -520,8 +569,7 @@
 - (IBAction)closeView:(id)sender {
     
     _infoView.alpha = 0;
-    
-    
+    imagesScrollView.alpha = 0;
     
 }
 
@@ -695,14 +743,43 @@
 // 当点击annotation view弹出的泡泡时，调用此接口
 - (void)mapView:(BMKMapView *)mapView annotationViewForBubble:(BMKAnnotationView *)view;
 {
-    NSLog(@"paopaoclick");
+    DLog(@"paopaoclick");
 
  
 }
 
+
+- (void)mapView:(BMKMapView *)mapView didSelectAnnotationView:(BMKAnnotationView *)view
+{
+    BMKPointAnnotation *point = view.annotation;
+    _infoView.alpha = 1;
+    
+    
+    
+    for (UIView *view in _mapButtonView.subviews) {
+        [view removeFromSuperview];
+    }
+    
+    
+    
+    if (currentMapType  == 1) {
+        [self viewLoadXingWei:point.title];
+    }
+    else {
+        [self viewLoadGongDi:point.title];
+    }
+    
+    
+    
+    
+}
+
+
+
+#pragma mark - 
+
 - (NSDictionary *)dictForDataArray:(NSString *)pid
 {
-    
     
     for (NSDictionary  *dict in self.dataMArray) {
 
@@ -720,7 +797,7 @@
     UIImageView *imgView =  [[ImageView share] addToView:_mapButtonView imagePathName:@"形状-1-副本-32" rect:RectMake2x(407, 393, 734, 475)];
 
     NSDictionary *dict = [self dictForDataArray:pactNumber];
-    NSLog(@"%@", dict);
+    DLog(@"%@", dict);
     
     
     int hight = 50;
@@ -762,8 +839,9 @@
     UIImageView *imgView =  [[ImageView share] addToView:_mapButtonView imagePathName:@"形状-1-副本-32" rect:RectMake2x(407, 393, 734, 475)];
     imgView.userInteractionEnabled = YES;
     
-    NSDictionary *dict = [self dictForDataArray:pactNumber];
-    NSLog(@"%@", dict);
+    NSDictionary *dict  = [NSDictionary dictionaryWithDictionary: [self dictForDataArray:pactNumber]];
+    DLog(@"%@", dict);
+    currentGDDict = dict;
     
     
     int hight = 50;
@@ -787,7 +865,7 @@
 //    UILabel *l5 = (UILabel *)[imgView viewWithTag:16];
     
     
-    NSLog(@"%@",  dict[@"OrderState"][@"text"]);
+    DLog(@"%@",  dict[@"OrderState"][@"text"]);
     l.text = [NSString stringWithFormat:@"实小创：%@", dict[@"MonitorName"][@"text"] ];
     l1.text = [NSString stringWithFormat:@"订单状态：%@", dict[@"OrderState"][@"text"] ];
     l2.text = [NSString stringWithFormat:@"客户姓名：%@ ", dict[@"CustomerName"][@"text"] ];
@@ -859,7 +937,7 @@
         for (NSDictionary *d in a) {
             
             
-            UITextView *tv = [[UITextView alloc] initWithFrame:RectMake2x(0, i * 50, 734, 150)];
+            UITextView *tv = [[UITextView alloc] initWithFrame:RectMake2x(0, i * 50, 604, 150)];
             [imgView addSubview:tv];
             tv.editable = NO;
             tv.textAlignment = NSTextAlignmentCenter;
@@ -891,7 +969,7 @@
 //事务单列表
 
     if ( dict[@"Transactions"]  ) {
-        NSMutableArray *a = dict[@"Delays"][@"Delay"];
+        NSMutableArray *a = dict[@"Transactions"][@"Transaction"];
         if ( [a isKindOfClass:[NSMutableDictionary class]] ) {
             
             a = [[NSMutableArray alloc] initWithObjects:a, nil];
@@ -905,21 +983,21 @@
         for (NSDictionary *d in a) {
             
             
-            UITextView *tv = [[UITextView alloc] initWithFrame:RectMake2x(0, i * 50, 734, 150)];
+            UITextView *tv = [[UITextView alloc] initWithFrame:RectMake2x(0,  (i + count) * 50, 604, 150)];
             [imgView addSubview:tv];
             tv.editable = NO;
             tv.textAlignment = NSTextAlignmentCenter;
             tv.backgroundColor = [UIColor clearColor];
-            tv.text = d[@"reason"][@"text"];
+            tv.text = d[@"transactionContent"][@"text"];
             
             NSString *ImgCount = d[@"ImgCount"][@"text"];
             if ( ! [ImgCount isEqualToString:@"0"]) {
                 UIButton *button = [UIButton buttonWithType:UIButtonTypeRoundedRect];
                 [button setTitleColor:[UIColor blueColor] forState:UIControlStateNormal];
-                button.frame = RectMake2x(560, i * 50, 154, 60);
+                button.frame = RectMake2x(570, (i + count) * 50, 154, 60);
                 button.backgroundColor = [UIColor whiteColor];
                 button.tag = tag;
-                [button setTitle:@"延期照片" forState:UIControlStateNormal];
+                [button setTitle:@"事务照片" forState:UIControlStateNormal];
                 [button addTarget:self action:@selector(openTransactionsZhaoPian:) forControlEvents:UIControlEventTouchUpInside];
                 [imgView addSubview:button];
             }
@@ -1007,6 +1085,97 @@
 
 
 
+- (void)scrollV:(NSArray *)array
+{
+    
+    for (UIView *v in imagesScrollView.subviews) {
+        [v removeFromSuperview];
+    }
+    
+
+    if (   ! imagesScrollView) {
+        imagesScrollView = [[UIScrollView alloc] initWithFrame:CGRectMake(0, 0, 1024, 768)];
+        imagesScrollView.pagingEnabled = YES;
+        imagesScrollView.backgroundColor = [UIColor whiteColor];
+        [self.view addSubview:imagesScrollView];
+    }
+
+    
+    
+    imagesScrollView.alpha = 1;
+    
+    int x = 0   ;
+    int y = 0;
+    
+    for (int i = 0;  i< array.count; i++) {
+
+        UIImageView *imgView = [[ImageView share] addToView:imagesScrollView imagePathName:@""  rect:CGRectMake(x + i*2014 , y, 1024, 768)];
+        NSString *string = array[i][@"text"];
+        NSURL *url = [[NSURL alloc] initWithString:string];
+
+        [imgView setImageWithURL:url];
+    }
+    
+    [imagesScrollView setContentSize:CGSizeMake(1024* array.count, 768)];
+    
+    
+//    [[Button share] addToView:self.view addTarget:self rect:CGRectMake(20, 413, 20, 38) tag:1999 action:@selector(closeImagesView:) imagePath:@"箭头-左"];
+    [[Button share] addToView:self.view addTarget:self rect:RectMake2x(1805, 80, 120, 120) tag:1004 action:@selector(closeImagesView:)
+                    imagePath:@"按钮-返回"
+     ];
+}
+
+- (void)closeImagesView:(UIButton *)button
+{
+    imagesScrollView.alpha = 0;
+    [button removeFromSuperview];
+}
+
+
+
+- (void)getNetImages:(NSString *)orderID itemId:(NSString *)itemId t:(int)itemType
+{
+    AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
+    manager.responseSerializer = [AFXMLParserResponseSerializer new];
+    manager.responseSerializer.acceptableContentTypes = [NSSet setWithObject:@"text/xml"];
+    
+    NSDictionary *parameters = @{
+                                 @"orderId":orderID,
+                                 @"itemId": itemId,
+                                 @"type": [NSNumber numberWithInt:itemType]};
+    
+    NSString *urlString = [NSString stringWithFormat:@"%@/GetImageInfo", KSXCHomeUrl];
+    
+    [manager POST:urlString parameters:parameters success:^(AFHTTPRequestOperation *operation, id responseObject) {
+        
+        
+        NSError *parseError = nil;
+        NSDictionary *xmlDictionary= [XMLReader dictionaryForParse:responseObject error:&parseError];
+        
+        NSString *s = [xmlDictionary[@"string"] objectForKey:@"text"];
+        
+        NSDictionary *dictionary= [XMLReader dictionaryForXMLString:s error:&parseError];
+        
+        NSArray *array = [NSArray array];
+        if ( [dictionary[@"ArrayOfString"][@"string"] isKindOfClass:[NSMutableDictionary class]] ) {
+            
+            array = [[NSMutableArray alloc]     initWithObjects: dictionary[@"ArrayOfString"][@"string"], nil];
+        }
+        else {
+            
+            array = dictionary[@"ArrayOfString"][@"string"];
+        }
+        [self scrollV:array];
+        
+        
+    } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+        [SVProgressHUD dismiss];
+        [[Message share] messageAlert:KString_Server_Error];
+        DLog(@"%s: AFHTTPRequestOperation error: %@", __FUNCTION__, error);
+    }];
+}
+
+
 //
 //2	延期单
 //3	事务单
@@ -1017,9 +1186,8 @@
     int tag = button.tag - 1000;
     
     NSDictionary *d = currentDelayArray [tag];
+    [self getNetImages:currentGDDict[@"OrderId"][@"text"] itemId:d[@"id"][@"text"] t:2];
     
-    
-
 }
 
 
@@ -1029,36 +1197,11 @@
     int tag = button.tag - 1000;
     
     NSDictionary *d = currentTransactionsArray[tag];
-    
-    
+    [self getNetImages:currentGDDict[@"OrderId"][@"text"] itemId:d[@"id"][@"text"] t:3];
     
 }
 
 
 
-- (void)mapView:(BMKMapView *)mapView didSelectAnnotationView:(BMKAnnotationView *)view
-{
-    BMKPointAnnotation *point = view.annotation;
-    _infoView.alpha = 1;
-    
-    
-    
-    for (UIView *view in _mapButtonView.subviews) {
-        [view removeFromSuperview];
-    }
-    
-    
-    
-    if (currentMapType  == 1) {
-        [self viewLoadXingWei:point.title];
-    }
-    else {
-        [self viewLoadGongDi:point.title];
-    }
-    
-
-    
-
-}
 
 @end
